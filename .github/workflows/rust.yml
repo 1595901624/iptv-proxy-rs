@@ -33,7 +33,7 @@ jobs:
 #       - name: get build number
 #         run: echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
       - name: get input tag name
-        run: echo "BUILD_TAG_NAME=${inputs.repoPath}" >> $GITHUB_ENV
+        run: echo "BUILD_TAG_NAME=$inputs.repoPath" >> $GITHUB_ENV
       - name: create release
         id: create-release
         uses: actions/github-script@v6
