@@ -1,0 +1,11 @@
+[package]
+name = "iptv_proxy_rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1.21.2", features = ["full"] }
+warp = "0.3.4"
+reqwest = {version = "0.11.12", features = ["json"] }
