@@ -75,6 +75,41 @@ jobs:
           path: |
             ./target/release/iptv_proxy_rs.exe
 
+  release-artifact:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install xattr
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xattr
+
+      - name: Download macos artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: iptv_proxy_rs-macos
+          path: bundle
+
+      - name: Download windows artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: iptv_proxy_rs-windows_x64
+          path: bundle
+
+      - name: Create Release
+        uses: softprops/action-gh-release@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.tagName }}
+          release_name: Release ${{ inputs.tagName }}
+          body: release
+          prerelease: false
+          generate_release_notes: false
+          files: ./bundle/*
+
 
 #   publish-release:
 #     permissions:

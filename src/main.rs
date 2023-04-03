@@ -15,27 +15,29 @@ async fn main() {
     let m3u8_proxy_router = warp::path!("m3u8" / String).and_then(move |url: String| {
         let decoded = decode(url.as_str()).expect("UTF-8");
         dbg!(&decoded);
-        get_content_async(decoded.to_string())
-    });
+        get_m3u8_content_async(decoded.to_string())
+    }).with(&cors);
 
     // proxy ts
     let ts_proxy_router = warp::path!("ts" / String).and_then(move |url| {
-        get_content_async_ts(url)
-    });
+        get_ts_content_async(url)
+    }).with(&cors);
 
-    let routers = m3u8_proxy_router.or(ts_proxy_router).with(cors);
+    let routers = m3u8_proxy_router.or(ts_proxy_router);
     warp::serve(routers).run(([127, 0, 0, 1], 25011)).await;
 }
 
-async fn get_content_async(url: String) -> Result<impl warp::Reply, Infallible> {
+// proxy m3u8
+async fn get_m3u8_content_async(url: String) -> Result<impl warp::Reply, Infallible> {
     // let url = "https://live.v1.mk/api/bestv.php?id=cctv1hd8m/8000000";
-    // // let url = "http://39.135.138.58:18890/PLTV/88888888/224/3221225918/index.m3u8";
+    // let url = "http://39.135.138.58:18890/PLTV/88888888/224/3221225918/index.m3u8";
     // let url = "https://live.v1.mk/api/sxg.php?id=CCTV-6H265_4000";
     let client = get_default_http_client();
     let result = client.get(url).send().await;
     let content = result.unwrap().text().await;
     let m3u8 = content.unwrap();
-    println!("{}", m3u8);
+
+    dbg!(&m3u8);
     let res = Response::builder()
         .status(200)
         // Are you sure about this one? More like "text/plain"?
@@ -45,7 +47,8 @@ async fn get_content_async(url: String) -> Result<impl warp::Reply, Infallible> 
     Ok(res)
 }
 
-async fn get_content_async_ts(ts: String) -> Result<impl warp::Reply, Infallible> {
+/// proxy ts
+async fn get_ts_content_async(ts: String) -> Result<impl warp::Reply, Infallible> {
     // let url = "https://live.v1.mk/api/bestv.php?id=cctv1hd8m/8000000";
     // let url = "http://39.135.138.58:18890/PLTV/88888888/224/3221225918/index.m3u8";
     // let url = "http://test.8ne5i.10.vs.rxip.sc96655.com/live/8ne5i_sccn,CCTV-6H265_hls_pull_4000K/280/085/429.ts";
