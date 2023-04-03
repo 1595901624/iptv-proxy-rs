@@ -57,21 +57,21 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: matrix.os == 'ubuntu-20.04'
         with:
-          name: artifacts-ubuntu-20.04
+          name: iptv_proxy_rs-linux
           path: |
             ./target/release/iptv_proxy_rs*
 
       - uses: actions/upload-artifact@v3
         if: matrix.os == 'macos-latest'
         with:
-          name: artifacts-windows-latest
+          name: iptv_proxy_rs-macos
           path: |
             ./target/release/iptv_proxy_rs*
 
       - uses: actions/upload-artifact@v3
         if: matrix.os == 'windows-latest'
         with:
-          name: artifacts-windows-latest
+          name: iptv_proxy_rs-windows_x64
           path: |
             ./target/release/iptv_proxy_rs.exe
 
