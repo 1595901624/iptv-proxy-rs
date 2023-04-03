@@ -27,16 +27,16 @@ jobs:
           node-version: 16
       - name: get input tag name
         run: echo "BUILD_TAG_NAME=$inputs.tagName" >> $GITHUB_ENV
-      - name: create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ inputs.tagName }}
-          release_name: Release ${{ inputs.tagName }}
-          draft: false
-          prerelease: false
+  #      - name: create Release
+  #        id: create_release
+  #        uses: actions/create-release@v1
+  #        env:
+  #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #        with:
+  #          tag_name: ${{ inputs.tagName }}
+  #          release_name: Release ${{ inputs.tagName }}
+  #          draft: true
+  #          prerelease: false
 
 
   build:
@@ -76,8 +76,10 @@ jobs:
             ./target/release/iptv_proxy_rs.exe
 
   release-artifact:
+    permissions:
+      contents: write
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
 
@@ -96,6 +98,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: iptv_proxy_rs-windows_x64
+          path: bundle
+
+      - name: Download linux artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: iptv_proxy_rs-linux
           path: bundle
 
       - name: Create Release
