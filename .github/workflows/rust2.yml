@@ -76,7 +76,7 @@ jobs:
             ./target/release/iptv_proxy_rs.exe
 
   release-artifact:
-    needs: create-release
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
