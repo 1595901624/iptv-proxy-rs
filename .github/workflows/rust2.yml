@@ -1,4 +1,4 @@
-name: Rust
+name: Rust2
 
 on:
   workflow_dispatch:
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ macos-latest, ubuntu-20.04, windows-latest ]
+        os: [ macos-latest, ubuntu-20.04, windows-latest ]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -55,22 +55,23 @@ jobs:
         run: cargo build --release --verbose
 
       - uses: actions/upload-artifact@v3
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-20.04'
         with:
-          name: artifacts-ubuntu-latest
+          name: artifacts-ubuntu-20.04
           path: |
             ./target/release/iptv_proxy_rs*
+
       - uses: actions/upload-artifact@v3
         if: matrix.os == 'macos-latest'
         with:
-          name: artifacts-${{ matrix.arch }}
+          name: artifacts-windows-latest
           path: |
             ./target/release/iptv_proxy_rs*
 
       - uses: actions/upload-artifact@v3
         if: matrix.os == 'windows-latest'
         with:
-          name: artifacts-${{ matrix.arch }}
+          name: artifacts-windows-latest
           path: |
             ./target/release/iptv_proxy_rs.exe
 
