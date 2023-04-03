@@ -59,14 +59,14 @@ jobs:
         with:
           name: iptv_proxy_rs-linux
           path: |
-            ./target/release/iptv_proxy_rs*
+            ./target/release/iptv_proxy_rs
 
       - uses: actions/upload-artifact@v3
         if: matrix.os == 'macos-latest'
         with:
           name: iptv_proxy_rs-macos
           path: |
-            ./target/release/iptv_proxy_rs*
+            ./target/release/iptv_proxy_rs
 
       - uses: actions/upload-artifact@v3
         if: matrix.os == 'windows-latest'
