@@ -1,0 +1,98 @@
+name: Rust
+
+on:
+  workflow_dispatch:
+    inputs:
+      tagName:
+        description: 'tagName'
+        required: true
+        default: 'v'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  create-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: get input tag name
+        run: echo "BUILD_TAG_NAME=$inputs.tagName" >> $GITHUB_ENV
+      - name: create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+
+  build:
+    needs: create-release
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ macos-latest, ubuntu-20.04, windows-latest ]
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --release --verbose
+
+      - uses: actions/upload-artifact@v3
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: artifacts-ubuntu-latest
+          path: |
+            ./target/release/iptv_proxy_rs*
+      - uses: actions/upload-artifact@v3
+        if: matrix.os == 'macos-latest'
+        with:
+          name: artifacts-${{ matrix.arch }}
+          path: |
+            ./target/release/iptv_proxy_rs*
+
+      - uses: actions/upload-artifact@v3
+        if: matrix.os == 'windows-latest'
+        with:
+          name: artifacts-${{ matrix.arch }}
+          path: |
+            ./target/release/iptv_proxy_rs.exe
+
+
+#   publish-release:
+#     permissions:
+#       contents: write
+#     runs-on: ubuntu-20.04
+#     needs: [create-release, build]
+
+#     steps:
+#       - name: publish release
+#         id: publish-release
+#         uses: actions/github-script@v6
+#         env:
+#           release_id: ${{ needs.create-release.outputs.release_id }}
+#         with:
+#           script: |
+#             github.rest.repos.updateRelease({
+#               owner: context.repo.owner,
+#               repo: context.repo.repo,
+#               release_id: process.env.release_id,
+#               draft: false,
+#               prerelease: false
+#             })
