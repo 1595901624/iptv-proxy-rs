@@ -92,19 +92,25 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: iptv_proxy_rs-macos
-          path: bundle
+          path: bundle/macos
 
       - name: Download windows artifacts
         uses: actions/download-artifact@v3
         with:
           name: iptv_proxy_rs-windows_x64
-          path: bundle
+          path: bundle/windows
 
       - name: Download linux artifacts
         uses: actions/download-artifact@v3
         with:
           name: iptv_proxy_rs-linux
-          path: bundle
+          path: bundle/linux
+
+      - name: Rename artifacts
+        run: |
+          mv "bundle/linux/iptv_proxy_rs" "bundle/iptv_proxy_rs_linux_amd64"
+          mv "bundle/macos/iptv_proxy_rs" "bundle/iptv_proxy_rs_macos_amd64"
+          mv "bundle/windows/iptv_proxy_rs.exe" "bundle/iptv_proxy_rs_windows_x64.exe"
 
       - name: Create Release
         uses: softprops/action-gh-release@master
