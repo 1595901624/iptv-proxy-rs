@@ -2,7 +2,7 @@ use std::convert::Infallible;
 use std::time::Duration;
 use reqwest::header::HeaderMap;
 use warp::Filter;
-use warp::http::{Response};
+use warp::http::{HeaderValue, Response};
 use urlencoding::decode;
 
 #[tokio::main]
@@ -19,8 +19,9 @@ async fn main() {
     }).with(&cors);
 
     // proxy ts
-    let ts_proxy_router = warp::path!("ts" / String).and_then(move |url| {
-        get_ts_content_async(url)
+    let ts_proxy_router = warp::path!("ts" / String).and_then(move |url: String| {
+        let decoded = decode(url.as_str()).expect("UTF-8");
+        get_ts_content_async(decoded.to_string())
     }).with(&cors);
 
     let routers = m3u8_proxy_router.or(ts_proxy_router);
@@ -34,8 +35,17 @@ async fn get_m3u8_content_async(url: String) -> Result<impl warp::Reply, Infalli
     // let url = "https://live.v1.mk/api/sxg.php?id=CCTV-6H265_4000";
     let client = get_default_http_client();
     let result = client.get(url).send().await;
+    if result.is_err() {
+        return Ok(Response::builder()
+            .status(500).body("".to_string()).unwrap());
+    }
     let content = result.unwrap().text().await;
-    let m3u8 = content.unwrap();
+    let m3u8;
+    if content.is_err() {
+        m3u8 = "".to_string();
+    } else {
+        m3u8 = content.unwrap();
+    }
 
     dbg!(&m3u8);
     let res = Response::builder()
@@ -44,7 +54,7 @@ async fn get_m3u8_content_async(url: String) -> Result<impl warp::Reply, Infalli
         .header("Content-Type", "txt")
         .body(m3u8)
         .unwrap();
-    Ok(res)
+    return Ok(res);
 }
 
 /// proxy ts
@@ -54,14 +64,32 @@ async fn get_ts_content_async(ts: String) -> Result<impl warp::Reply, Infallible
     // let url = "http://test.8ne5i.10.vs.rxip.sc96655.com/live/8ne5i_sccn,CCTV-6H265_hls_pull_4000K/280/085/429.ts";
     let client = get_default_http_client();
     let result = client.get(ts).send().await;
+    if result.is_err() {
+        return Ok(Response::builder()
+            .status(500)
+            .header("Content-Type", "video/mp2t")
+            .body("".to_string())
+            .unwrap());
+    }
     let response = result.unwrap();
+    let headers_map = response.headers().clone();
+
+    let mut builder = Response::builder();
+    let headers = builder.headers_mut().unwrap();
+    for (k, v) in headers_map.into_iter() {
+        let h = k.unwrap();
+        if h != "content-length" {
+            headers.insert(h, HeaderValue::from_str(v.to_str().unwrap()).unwrap());
+        }
+    }
+
     let content = response.text().await;
     let ts = content.unwrap();
-    dbg!(&ts);
-    let res = Response::builder()
+
+    dbg!(&headers);
+
+    let res = builder
         .status(200)
-        // Are you sure about this one? More like "text/plain"?
-        .header("Content-Type", "video/mp2t")
         .body(ts)
         .unwrap();
     Ok(res)
