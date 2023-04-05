@@ -10,3 +10,5 @@ tokio = { version = "1.21.2", features = ["full"] }
 warp = "0.3.4"
 reqwest = {version = "0.11.12", features = ["json"] }
 urlencoding = "2.1.2"
+m3u8-rs = "5.0.3"
+url = "2.3.1"
