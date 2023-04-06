@@ -2,6 +2,7 @@ use std::convert::Infallible;
 use std::string::ToString;
 use std::time::Duration;
 use m3u8_rs::{Playlist};
+use m3u8_rs::AlternativeMediaType::Audio;
 use reqwest::header::HeaderMap;
 use warp::Filter;
 use warp::http::{HeaderValue, Response};
@@ -34,7 +35,7 @@ async fn main() {
     warp::serve(routers).run(([127, 0, 0, 1], 25011)).await;
 }
 
-// proxy m3u8
+/// proxy m3u8
 async fn get_m3u8_content_async(url: String) -> Result<impl warp::Reply, Infallible> {
     // let url = "https://live.v1.mk/api/bestv.php?id=cctv1hd8m/8000000";
     // let url = "http://39.135.138.58:18890/PLTV/88888888/224/3221225918/index.m3u8";
@@ -70,22 +71,61 @@ fn process_m3u8(m3u8_path: &String, content: String) -> String {
         return "".to_string();
     }
     if let Ok(Playlist::MediaPlaylist(mut pl)) = m3u8_rs::parse_playlist_res(content.as_bytes()) {
-        // println!("{:?}", pl);
         pl.segments.iter_mut().for_each(|segment| {
             // http://39.135.138.58:18890/PLTV/88888888/224/3221225918/index.m3u8
             // http%3A%2F%2F113.207.84.197%3A8090%2F__cl%2Fcg%3Alive%2F__c%2Fcctv17HD%2F__op%2Fdefault%2F__f%2Findex.m3u8
             // No process with BANDWIDTH
+
+            let path_prefix = format!("{}:{}/ts/", HOST, PORT);
+
             if segment.uri.starts_with("http") {
-                segment.uri = format!("{}:{}/ts/{}", HOST, PORT, encode(&segment.uri));
+                segment.uri = format!("{}{}", path_prefix, encode(&segment.uri));
             } else {
                 if let Some(position) = m3u8_path.rfind("/") {
                     let url = &m3u8_path[..position + 1];
                     let real_url = format!("{}{}", url, &segment.uri);
-                    segment.uri = format!("{}:{}/ts/{}", HOST, PORT, encode(&real_url));
+                    segment.uri = format!("{}{}", path_prefix, encode(&real_url));
                 }
             }
         });
         // dbg!(&pl);
+        let mut v: Vec<u8> = Vec::new();
+        if let Ok(_) = pl.write_to(&mut v) {
+            return String::from_utf8(v).unwrap();
+        }
+    } else if let Ok(Playlist::MasterPlaylist(mut pl)) = m3u8_rs::parse_playlist_res(content.as_bytes()) {
+        // println!("{:?}", pl.alternatives);
+
+        let path_prefix = format!("{}:{}/m3u8/", HOST, PORT);
+
+        // process audio
+        pl.alternatives.iter_mut().for_each(|mut media| {
+            if media.media_type == Audio && media.uri.is_some() {
+                if media.uri.as_ref().unwrap().starts_with("http") {
+                    media.uri = Some(format!("{}{}", path_prefix, encode(media.uri.as_ref().unwrap())));
+                } else {
+                    if let Some(position) = m3u8_path.rfind("/") {
+                        let url = &m3u8_path[..position + 1];
+                        let real_url = format!("{}{}", url, media.uri.as_ref().unwrap());
+                        media.uri = Some(format!("{}{}", &path_prefix, encode(&real_url)));
+                    }
+                }
+            }
+        });
+
+        // process m3u8 list
+        pl.variants.iter_mut().for_each(|mut variant| {
+            // let path_prefix = format!("{}:{}/m3u8/", HOST, PORT);
+            if variant.uri.starts_with("http") {
+                variant.uri = format!("{}{}", path_prefix, encode(&variant.uri));
+            } else {
+                if let Some(position) = m3u8_path.rfind("/") {
+                    let url = &m3u8_path[..position + 1];
+                    let real_url = format!("{}{}", url, &variant.uri);
+                    variant.uri = format!("{}{}", &path_prefix, encode(&real_url));
+                }
+            }
+        });
         let mut v: Vec<u8> = Vec::new();
         if let Ok(_) = pl.write_to(&mut v) {
             return String::from_utf8(v).unwrap();
