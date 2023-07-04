@@ -5,7 +5,7 @@ use m3u8_rs::{Playlist};
 use m3u8_rs::AlternativeMediaType::Audio;
 use reqwest::header::HeaderMap;
 use warp::Filter;
-use warp::http::{HeaderValue, Response};
+use warp::http::{HeaderValue, Response, Uri};
 use urlencoding::{decode, encode};
 
 const HOST: &str = "http://127.0.0.1";
@@ -30,6 +30,8 @@ async fn main() {
         // dbg!(&decoded);
         get_ts_content_async(decoded.to_string())
     }).with(&cors);
+
+    // let route = warp::any().map(|| warp::redirect(Uri::from_static("https://120.77.38.213:9443/flv/2008180000000304/ZjE4ejhGVUU0QzJ0Y3M4QixhNDMzNmQyOWQwMTBlOTk2.ts?edge=on")));
 
     let routers = m3u8_proxy_router.or(ts_proxy_router);
     warp::serve(routers).run(([127, 0, 0, 1], 25011)).await;
@@ -142,6 +144,7 @@ async fn get_ts_content_async(ts: String) -> Result<impl warp::Reply, Infallible
     // let url = "http://test.8ne5i.10.vs.rxip.sc96655.com/live/8ne5i_sccn,CCTV-6H265_hls_pull_4000K/280/085/429.ts";
     let client = get_default_http_client();
     let result = client.get(&ts).send().await;
+    dbg!(&result);
     if result.is_err() {
         return Ok(Response::builder()
             .status(500)
