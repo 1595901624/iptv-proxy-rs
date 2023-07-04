@@ -2,8 +2,14 @@ name: Deploy
 
 on:
   push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+#    tags:
+#      - "v[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      tagName:
+        description: 'tagName'
+        required: true
+        default: 'v'
 
 permissions:
   contents: write
